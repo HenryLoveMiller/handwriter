@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getWeightLevels, getScoreDisplay, getAccuracyWord, getCoverageWord, getSmoothnessWord } from '../types';
+import { getScoreDisplay, getAccuracyWord, getCoverageWord, getSmoothnessWord } from '../types';
 import type { LetterCase, LetterScore, ToolbarSettings } from '../types';
 import { useDrawing } from '../hooks/useDrawing';
 import { buildOutsideMask, scoreAttempt } from '../utils/scoring';
@@ -61,8 +61,6 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
   const [showOverlay, setShowOverlay] = useState(false);
   const [arrowEditMode, setArrowEditMode] = useState(false);
   const [draftStrokes, setDraftStrokes] = useState<StrokeStart[] | null>(null);
-
-  const weight = getWeightLevels(settings.font.category)[settings.strokeWeight];
 
   const guideFontSize = Math.min(size.w, size.h) * GUIDE_FONT_SIZE_RATIO;
 
@@ -459,7 +457,8 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
     });
   }, [arrowEditMode, draftStrokes, size]);
 
-  const handleToggleEditArrows = useCallback(() => {
+  // @ts-ignore — wired up in a future toolbar button
+  const _handleToggleEditArrows = useCallback(() => {
     if (!arrowEditMode) {
       const base = getStrokes(settings.font.family, caseType, caseType === 'upper' ? letter.toUpperCase() : letter.toLowerCase());
       // Promote every quadratic bezier (cx/cy only) to an equivalent cubic (cx/cy + c2x/c2y)
