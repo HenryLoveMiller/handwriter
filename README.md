@@ -1,0 +1,32 @@
+# Handwriter — Letter Tracing Practice
+
+A tablet-optimized web app for handwriting practice. Trace letters of the alphabet over a translucent guide and receive an accuracy score.
+
+## Running the app
+
+```bash
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173` in a browser (or on your tablet).
+
+## Features
+
+- **Trace any letter** A–Z in uppercase or lowercase
+- **Pressure-sensitive drawing** via the Pointer Events API (varies line width with stylus pressure)
+- **Scoring** — tap "Score ✓" after tracing to see:
+  - **Coverage**: how much of the guide letter you covered
+  - **Precision**: how much of your ink landed inside the guide
+  - **Overall**: weighted average (50/50), shown as a percentage and letter grade
+  - Red overlay = strokes outside the guide; green = inside
+- **Progress tracker** — scores for all 26 letters persist across page reloads via localStorage
+- **Customizable guide**: stroke width, opacity, and 7 font choices (manuscript, cursive, serif, sans-serif, monospace, handwriting, script)
+- **Undo** last stroke or **Clear** the canvas to retry
+
+## Design decisions
+
+- The guide letter is rendered as a CSS element (not on the canvas) for crisp antialiasing at all sizes; the scoring uses an offscreen canvas with an identical font spec for pixel-accurate comparison.
+- Canvas internal resolution matches the container's CSS pixel dimensions from a ResizeObserver, so it stays sharp at any layout size.
+- `touch-action: none` prevents scroll interference during drawing; pointer capture ensures strokes don't break when the pointer leaves the canvas.
+- The canvas is keyed on `letter + caseType + canvasKey` so it resets automatically when navigating or toggling case.
