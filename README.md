@@ -10,7 +10,7 @@ npm run dev
 ```
 
 Open `http://localhost:5173` in a browser (or on your tablet).
-
+Also available at: `https://handwriter.jacobpaine.com/`
 ## Features
 
 - **Trace any letter** A–Z in uppercase or lowercase
