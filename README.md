@@ -21,10 +21,18 @@ Also available at: `https://handwriter.jacobpaine.com/`
   - **Overall**: weighted average (50/50), shown as a percentage and letter grade
   - Red overlay = strokes outside the guide; green = inside
 - **Progress tracker** — scores for all 26 letters persist across page reloads via localStorage
-- **Customizable guide**: stroke width, opacity, and 7 font choices (manuscript, cursive, serif, sans-serif, monospace, handwriting, script)
+- **Customizable guide**: stroke width, opacity, and 12 font choices (manuscript, print, cursive, serif, monospace, handwriting, and brush script)
 - **Undo** last stroke or **Clear** the canvas to retry
 
 ## Design decisions
+
+### Calibrating stroke demonstrations
+
+Stroke demonstrations use hand-authored centerlines rather than paths extracted from the font outline.
+When adding a font, calibrate every uppercase and lowercase glyph instead of aliasing another font's
+stroke map indefinitely. In development mode, select the font and letter, click **Calibrate Strokes**,
+drag the numbered endpoints and Bézier handles onto the visible glyph, and press **Demo** to preview
+the draft path. Copy the generated block into the font-specific map in `src/data/strokeData.ts`.
 
 - The guide letter is rendered as a CSS element (not on the canvas) for crisp antialiasing at all sizes; the scoring uses an offscreen canvas with an identical font spec for pixel-accurate comparison.
 - Canvas internal resolution matches the container's CSS pixel dimensions from a ResizeObserver, so it stays sharp at any layout size.

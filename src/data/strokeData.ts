@@ -8,8 +8,8 @@
 //   • Uppercase T is written top bar first, then the center downstroke.
 //   • Other crossbars follow the main stems; lowercase t keeps stem-then-crossbar order.
 //   • Joined diagonal forms such as M, V, and W follow the natural down-up path.
-//   • Where two strokes share a start point they are offset by ~0.06 so
-//     the numbered circles remain visually distinct.
+//   • Strokes that meet in the rendered glyph must share the same junction
+//     coordinates so the animated demonstration does not leave visible gaps.
 //
 // ex/ey = normalized end position of the stroke (used to draw directional arrows).
 // For dot strokes (i, j) ex === x and ey === y to signal "tap here."
@@ -58,8 +58,8 @@ export type FontStrokeMap = Record<string, StrokeStart[]>;
 const NUNITO_UPPER: FontStrokeMap = {
   // A: left leg from apex → lower-left; right leg from apex → lower-right; crossbar L→R.
   A: [
-    {x:0.44,y:0.02, ex:0.10,ey:0.96},
-    {x:0.56,y:0.02, ex:0.90,ey:0.96},
+    {x:0.50,y:0.02, ex:0.10,ey:0.96},
+    {x:0.50,y:0.02, ex:0.90,ey:0.96},
     {x:0.10,y:0.54, ex:0.90,ey:0.54},
   ],
 
@@ -152,7 +152,7 @@ const NUNITO_UPPER: FontStrokeMap = {
 
   // O: CCW oval compound bezier — enters at ~1 o'clock, full CCW sweep, exits lower-right.
   O: [
-    {x:0.84,y:0.25, ex:0.91,ey:0.34,
+    {x:0.84,y:0.25, ex:0.84,ey:0.25,
      cx:0.48,cy:-0.19, c2x:-0.34,c2y:0.30,
      mx:0.30,my:0.92,
      c3x:0.88,c3y:1.07, c4x:1.07,c4y:0.45},
@@ -166,7 +166,7 @@ const NUNITO_UPPER: FontStrokeMap = {
 
   // Q: CCW oval (compound, same as O); tail from lower-right interior diagonally outward.
   Q: [
-    {x:0.84,y:0.25, ex:0.91,ey:0.34,
+    {x:0.84,y:0.25, ex:0.84,ey:0.25,
      cx:0.48,cy:-0.19, c2x:-0.34,c2y:0.30,
      mx:0.30,my:0.92,
      c3x:0.88,c3y:1.07, c4x:1.07,c4y:0.45},
@@ -431,21 +431,28 @@ const ABEEZEE_UPPER: FontStrokeMap = {
   //    At y=0.62 the legs sit at x≈0.223 (left) and x≈0.777 (right); x:0.235/ex:0.765
   //    gives a ~0.012 inset from each outer leg face — the correct stroke endpoint position.
   A: [
-    {x:0.44, y:0.02, ex:0.10, ey:0.96},   // left leg: apex → lower-left foot
-    {x:0.56, y:0.02, ex:0.90, ey:0.96},   // right leg: apex → lower-right foot
+    {x:0.50, y:0.02, ex:0.10, ey:0.96},   // left leg: apex → lower-left foot
+    {x:0.50, y:0.02, ex:0.90, ey:0.96},   // right leg: apex → lower-right foot
     {x:0.235, y:0.62, ex:0.765, ey:0.62}, // crossbar: inner left → inner right at 62% cap-height
+  ],
+
+  // B: left-aligned stem; smooth upper and lower bowls — matched to ABeeZee geometry.
+  B: [
+    {x:0.09,y:0.04, ex:0.09,ey:0.97},
+    {x:0.18,y:0.04, ex:0.18,ey:0.51, cx:0.89,cy:0.04, c2x:1.18,c2y:0.45},
+    {x:0.18,y:0.51, ex:0.18,ey:0.97, cx:1.20,cy:0.53, c2x:1.28,c2y:0.91},
   ],
 
   // D: stem sits far left (x≈0.09); bowl arc cubic — from editor.
   D: [
     {x:0.09,y:0.06, ex:0.10,ey:0.97},
-    {x:0.32,y:0.07, ex:0.20,ey:0.97, cx:1.15,cy:0.15, c2x:1.17,c2y:0.93},
+    {x:0.09,y:0.07, ex:0.10,ey:0.97, cx:1.15,cy:0.15, c2x:1.17,c2y:0.93},
   ],
 
   // E: vertical stem; top bar; middle bar; bottom bar — from editor.
   E: [
     {x:0.12,y:0.07, ex:0.12,ey:0.96},
-    {x:0.39,y:0.06, ex:0.99,ey:0.06},
+    {x:0.12,y:0.06, ex:0.99,ey:0.06},
     {x:0.12,y:0.49, ex:0.86,ey:0.49},
     {x:0.12,y:0.95, ex:0.94,ey:0.95},
   ],
@@ -486,21 +493,21 @@ const ABEEZEE_UPPER: FontStrokeMap = {
   // M: left stem; left diagonal → valley; right diagonal → valley; right stem — from editor.
   M: [
     {x:0.08,y:0.05, ex:0.07,ey:0.96},
-    {x:0.19,y:0.16, ex:0.48,ey:0.72},
-    {x:0.49,y:0.70, ex:0.87,ey:0.11},
+    {x:0.08,y:0.05, ex:0.48,ey:0.72},
+    {x:0.48,y:0.72, ex:0.89,ey:0.09},
     {x:0.89,y:0.09, ex:0.90,ey:0.96},
   ],
 
   // N: left stem; diagonal top-left → bottom-right; right stem — from editor.
   N: [
     {x:0.09,y:0.04, ex:0.09,ey:0.97},
-    {x:0.22,y:0.14, ex:0.88,ey:0.97},
+    {x:0.09,y:0.04, ex:0.91,ey:0.97},
     {x:0.91,y:0.04, ex:0.91,ey:0.97},
   ],
 
   // O: CCW oval — compound bezier — from editor.
   O: [
-    {x:0.84,y:0.22, ex:0.91,ey:0.34, cx:0.48,cy:-0.19, c2x:-0.34,c2y:0.30, mx:0.29,my:0.90, c3x:0.88,c3y:1.07, c4x:1.07,c4y:0.45},
+    {x:0.84,y:0.22, ex:0.84,ey:0.22, cx:0.48,cy:-0.19, c2x:-0.34,c2y:0.30, mx:0.29,my:0.90, c3x:0.88,c3y:1.07, c4x:1.07,c4y:0.45},
   ],
 
   // P: vertical stem; bump from top → mid — stem/bump positions estimated; needs editor tuning.
@@ -511,13 +518,13 @@ const ABEEZEE_UPPER: FontStrokeMap = {
 
   // Q: CCW oval (compound, like O); tail from lower-right — from editor.
   Q: [
-    {x:0.91,y:0.49, ex:0.92,ey:0.61, cx:0.75,cy:-0.34, c2x:-0.30,c2y:0.15, mx:0.18,my:0.83, c3x:0.37,c3y:0.99, c4x:0.84,c4y:0.99},
+    {x:0.91,y:0.49, ex:0.91,ey:0.49, cx:0.75,cy:-0.34, c2x:-0.30,c2y:0.15, mx:0.18,my:0.83, c3x:0.37,c3y:0.99, c4x:0.84,c4y:0.99},
     {x:0.62,y:0.72, ex:0.94,ey:0.93},
   ],
 
   // R: vertical stem; bump → mid; diagonal leg → lower-right — from editor.
   R: [
-    {x:0.09,y:0.04, ex:0.09,ey:0.97},
+    {x:0.09,y:0.06, ex:0.10,ey:0.96},
     {x:0.18,y:0.04, ex:0.18,ey:0.52, cx:0.89,cy:0.04, c2x:1.20,c2y:0.46},
     {x:0.50,y:0.51, ex:0.90,ey:0.97},
   ],
@@ -580,19 +587,22 @@ const ABEEZEE_UPPER: FontStrokeMap = {
 const ABEEZEE_LOWER: FontStrokeMap = {
   ...NUNITO_LOWER,
 
-  // a: CCW oval (compound) + right stem — from editor.
+  // a: CCW oval (compound) + right stem with a subtle exit hook — from editor.
   a: [
     {x:0.78,y:0.24, ex:0.81,ey:0.69,
      cx:0.50,cy:-0.14, c2x:-0.18,c2y:0.28,
      mx:0.15,my:0.80,
      c3x:0.33,c3y:0.94, c4x:0.68,c4y:1.06},
-    {x:0.88,y:0.06, ex:0.88,ey:0.96},
+    {x:0.88,y:0.06, ex:0.97,ey:0.94,
+     cx:0.88,cy:0.34, c2x:0.88,c2y:0.68,
+     mx:0.88,my:0.84,
+     c3x:0.88,c3y:0.92, c4x:0.92,c4y:0.95},
   ],
 
   // b: tall stem; bowl — from editor.
   b: [
     {x:0.12,y:0.02, ex:0.12,ey:0.96},
-    {x:0.23,y:0.36, ex:0.20,ey:0.92, cx:0.97,cy:0.23, c2x:1.23,c2y:1.08},
+    {x:0.12,y:0.36, ex:0.12,ey:0.92, cx:0.97,cy:0.23, c2x:1.23,c2y:1.08},
   ],
 
   // c: CCW arc — from editor.
@@ -600,13 +610,16 @@ const ABEEZEE_LOWER: FontStrokeMap = {
     {x:0.90,y:0.08, ex:0.97,ey:0.87, cx:-0.24,cy:0.04, c2x:-0.01,c2y:1.22},
   ],
 
-  // d: oval + ascender stem — from editor.
+  // d: oval + ascender stem with a subtle upturned exit — from editor.
   d: [
     {x:0.76,y:0.40, ex:0.77,ey:0.80,
      cx:0.32,cy:0.16, c2x:-0.18,c2y:0.60,
      mx:0.12,my:0.82,
-     c3x:0.12,c3y:1.02, c4x:0.64,c4y:1.04},
-    {x:0.81,y:0.03, ex:0.84,ey:0.96},
+     c3x:0.30,c3y:0.95, c4x:0.64,c4y:1.04},
+    {x:0.81,y:0.03, ex:0.96,ey:0.93,
+     cx:0.82,cy:0.34, c2x:0.84,c2y:0.68,
+     mx:0.84,my:0.84,
+     c3x:0.84,c3y:0.92, c4x:0.89,c4y:0.97},
   ],
 
   // e: crossbar → up → CCW loop → exits lower-right — from editor.
@@ -632,10 +645,13 @@ const ABEEZEE_LOWER: FontStrokeMap = {
     {x:0.94,y:0.09, ex:0.22,ey:0.92, cx:0.88,cy:0.68, c2x:1.12,c2y:1.01},
   ],
 
-  // h: tall stem; arch — from editor.
+  // h: tall stem; arch with a subtle upturned exit — from editor.
   h: [
     {x:0.12,y:0.02, ex:0.12,ey:0.96},
-    {x:0.18,y:0.44, ex:0.88,ey:0.96, cx:0.96,cy:0.19, c2x:0.88,c2y:0.60},
+    {x:0.18,y:0.44, ex:0.97,ey:0.92,
+     cx:0.96,cy:0.19, c2x:0.88,c2y:0.55,
+     mx:0.88,my:0.84,
+     c3x:0.88,c3y:0.92, c4x:0.92,c4y:0.97},
   ],
 
   // j: body descends then hooks; dot — from editor.
@@ -644,13 +660,13 @@ const ABEEZEE_LOWER: FontStrokeMap = {
     {x:0.76,y:0.06, ex:0.76,ey:0.06},
   ],
 
-  // k: tall stem; second stroke forms a small x-height loop, then sweeps down-right.
+  // k: tall stem; second stroke forms a small x-height loop, then sweeps down-right with a subtle upturned exit.
   k: [
     {x:0.12,y:0.02, ex:0.12,ey:0.96},
-    {x:0.24,y:0.54, ex:0.88,ey:0.94,
+    {x:0.12,y:0.54, ex:0.96,ey:0.91,
      cx:0.38,cy:0.47, c2x:0.58,c2y:0.36,
      mx:0.75,my:0.35, c3x:0.90,c3y:0.43, c4x:0.56,c4y:0.66,
-     mx2:0.34,my2:0.58, c5x:0.48,c5y:0.65, c6x:0.74,c6y:0.85},
+     mx2:0.34,my2:0.58, c5x:0.48,c5y:0.65, c6x:0.86,c6y:0.97},
   ],
 
   // l: tall stroke with curved tail — from editor.
@@ -658,17 +674,23 @@ const ABEEZEE_LOWER: FontStrokeMap = {
     {x:0.16,y:0.01, ex:0.86,ey:0.95, cx:0.27,cy:0.64, c2x:-0.25,c2y:0.98},
   ],
 
-  // m: left stem; first arch; second arch — from editor.
+  // m: left stem; first arch; second arch with a subtle upturned exit — from editor.
   m: [
     {x:0.04,y:0.06, ex:0.05,ey:0.96},
     {x:0.11,y:0.23, ex:0.52,ey:0.94, cx:0.45,cy:-0.15, c2x:0.52,c2y:0.45},
-    {x:0.56,y:0.26, ex:0.94,ey:0.94, cx:0.95,cy:-0.17, c2x:0.94,c2y:0.44},
+    {x:0.56,y:0.26, ex:1.01,ey:0.91,
+     cx:0.95,cy:-0.17, c2x:0.94,c2y:0.44,
+     mx:0.94,my:0.82,
+     c3x:0.94,c3y:0.90, c4x:0.97,c4y:0.96},
   ],
 
-  // n: downstroke; arch — from editor.
+  // n: downstroke; arch with a subtle upturned exit — from editor.
   n: [
     {x:0.12,y:0.08, ex:0.12,ey:0.94},
-    {x:0.18,y:0.08, ex:0.88,ey:0.94, cx:1.03,cy:0.02, c2x:0.88,c2y:0.55},
+    {x:0.18,y:0.08, ex:0.97,ey:0.91,
+     cx:1.03,cy:0.02, c2x:0.88,c2y:0.48,
+     mx:0.88,my:0.82,
+     c3x:0.88,c3y:0.90, c4x:0.92,c4y:0.96},
   ],
 
   // o: CCW oval compound bezier — from editor.
@@ -682,22 +704,25 @@ const ABEEZEE_LOWER: FontStrokeMap = {
   // p: descender stem; bowl arcs right from stem-top — from editor.
   p: [
     {x:0.16,y:0.12, ex:0.20,ey:0.96},
-    {x:0.28,y:0.10, ex:0.20,ey:0.56, cx:1.21,cy:-0.11, c2x:1.02,c2y:0.96},
+    {x:0.16,y:0.12, ex:0.16,ey:0.56, cx:1.21,cy:-0.11, c2x:1.02,c2y:0.96},
   ],
 
-  // q: CCW oval + right stem through descender — from editor.
+  // q: CCW oval + right descender with a subtle upturned exit — from editor.
   q: [
     {x:0.63,y:0.08, ex:0.88,ey:0.56,
      cx:0.40,cy:0.03, c2x:0.02,c2y:0.16,
      mx:0.15,my:0.49,
      c3x:0.12,c3y:0.58, c4x:0.54,c4y:0.77},
-    {x:0.91,y:0.10, ex:0.92,ey:0.96},
+    {x:0.91,y:0.10, ex:1.00,ey:0.94,
+     cx:0.91,cy:0.37, c2x:0.92,c2y:0.70,
+     mx:0.92,my:0.87,
+     c3x:0.92,c3y:0.94, c4x:0.96,c4y:0.98},
   ],
 
   // r: downstroke; shoulder arcs rightward — from editor.
   r: [
     {x:0.14,y:0.10, ex:0.14,ey:1.01},
-    {x:0.45,y:0.17, ex:0.99,ey:0.09, cx:0.57,cy:0.13, c2x:0.72,c2y:0.05},
+    {x:0.14,y:0.17, ex:0.99,ey:0.09, cx:0.57,cy:0.13, c2x:0.72,c2y:0.05},
   ],
 
   // s: S-curve compound bezier — from editor.

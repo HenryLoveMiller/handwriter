@@ -615,8 +615,7 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
     });
   }, [arrowEditMode, draftStrokes, size]);
 
-  // @ts-ignore — wired up in a future toolbar button
-  const _handleToggleEditArrows = useCallback(() => {
+  const handleToggleEditArrows = useCallback(() => {
     if (!arrowEditMode) {
       const base = getStrokes(settings.font.family, caseType, caseType === 'upper' ? letter.toUpperCase() : letter.toLowerCase());
       // Promote every quadratic bezier (cx/cy only) to an equivalent cubic (cx/cy + c2x/c2y)
@@ -807,7 +806,8 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
     const boundsSize = bboxSizeRef.current;
     const measuredSize = measuredSizeRef.current;
     const displayLetter = caseType === 'upper' ? letter.toUpperCase() : letter.toLowerCase();
-    const demonstrationStrokes = getStrokes(settings.font.family, caseType, displayLetter);
+    const savedStrokes = getStrokes(settings.font.family, caseType, displayLetter);
+    const demonstrationStrokes = arrowEditMode && draftStrokes ? draftStrokes : savedStrokes;
     if (
       !canvas
       || !bounds
@@ -937,7 +937,7 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
     };
 
     animationFrameRef.current = requestAnimationFrame(animate);
-  }, [caseType, guideFontSize, guideX, guideY, isDemonstrating, letter, resolvedPenWidth, settings.font.family, settings.guideStrokeWidth, stopDemonstration]);
+  }, [arrowEditMode, caseType, draftStrokes, guideFontSize, guideX, guideY, isDemonstrating, letter, resolvedPenWidth, settings.font.family, settings.guideStrokeWidth, stopDemonstration]);
 
   useEffect(() => {
     if (hasAutoPlayedDemoRef.current || expectedStrokes === 0) return;
@@ -1182,6 +1182,19 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
           {isDemonstrating ? '■ Stop Demo' : '▶ Demo'}
         </button>
 
+        {import.meta.env.DEV && (
+          <button
+            onClick={handleToggleEditArrows}
+            className={`px-4 py-3.5 sm:px-5 sm:py-3.5 rounded-2xl shadow-md font-semibold text-sm active:scale-95 transition-all ${
+              arrowEditMode
+                ? 'bg-amber-500 text-white hover:bg-amber-600'
+                : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+            }`}
+          >
+            {arrowEditMode ? '✓ Finish Calibrating' : '✎ Calibrate Strokes'}
+          </button>
+        )}
+
         <button
           onClick={handleUndo}
           disabled={strokes.length === 0}
@@ -1211,7 +1224,7 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
       {/* Arrow editor readout panel */}
       {arrowEditMode && draftStrokes && (
         <div className="rounded-2xl bg-gray-900 text-green-400 font-mono text-xs p-4 shadow-inner overflow-x-auto">
-          <div className="text-gray-400 mb-1 text-[10px] uppercase tracking-wider">Stroke data — copy &amp; paste into strokeData.ts</div>
+          <div className="text-gray-400 mb-1 text-[10px] uppercase tracking-wider">Drag the numbered points, press Demo to preview, then copy into strokeData.ts</div>
           <pre className="whitespace-pre leading-relaxed">{`// ${settings.font.family} — ${caseType}\n${caseType === 'upper' ? letter.toUpperCase() : letter.toLowerCase()}: [\n${formatStrokeData(draftStrokes)}\n],`}</pre>
         </div>
       )}

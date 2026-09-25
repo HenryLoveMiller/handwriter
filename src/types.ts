@@ -79,7 +79,17 @@ export interface FontOption {
 
 export const FONT_OPTIONS: FontOption[] = [
   { name: "Children's Print (ABeeZee)", family: 'ABeeZee', category: 'beginner' },
+  { name: 'School Manuscript (Edu Guides)', family: 'Edu AU VIC WA NT Guides', category: 'beginner' },
+  { name: 'Rounded Print (Nunito)', family: 'Nunito', category: 'print' },
+  { name: 'Playful Print (Fredoka)', family: 'Fredoka', category: 'print' },
+  { name: 'Monospace (Roboto Mono)', family: 'Roboto Mono', category: 'print' },
+  { name: 'Classic Serif (Playfair Display)', family: 'Playfair Display', category: 'serif' },
+  { name: 'Calligraphic Serif (Lora)', family: 'Lora', category: 'serif' },
   { name: 'Cursive (Dancing Script)', family: 'Dancing Script', category: 'cursive' },
+  { name: 'Casual Cursive (Caveat)', family: 'Caveat', category: 'cursive' },
+  { name: 'Handwriting (Patrick Hand)', family: 'Patrick Hand', category: 'handwriting' },
+  { name: 'Casual Handwriting (Indie Flower)', family: 'Indie Flower', category: 'handwriting' },
+  { name: 'Brush Script (Pacifico)', family: 'Pacifico', category: 'cursive' },
 ];
 
 export function getAccuracyWord(s: number) {
