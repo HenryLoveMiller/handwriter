@@ -55,6 +55,11 @@ interface DemoStroke {
   length: number;
 }
 
+interface TimedDemoStroke extends DemoStroke {
+  beginsAt: number;
+  duration: number;
+}
+
 function createDemoStroke(stroke: StrokeStart, bounds: StrokeBounds): DemoStroke {
   const point = (x: number, y: number): DemoPoint => ({
     x: bounds.left + x * bounds.width,
@@ -841,13 +846,22 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
       maskContext.strokeText(displayLetter, guideX, guideY);
     }
 
-    const animatedStrokes = demonstrationStrokes.map((stroke) => createDemoStroke(stroke, bounds));
-    const strokeDuration = 720;
-    const strokeGap = 180;
-    const holdDuration = 450;
+    const strokeGap = 220;
+    const referenceSize = Math.max(1, Math.min(bounds.width, bounds.height));
+    let nextStrokeStart = 0;
+    const animatedStrokes: TimedDemoStroke[] = demonstrationStrokes.map((stroke) => {
+      const animatedStroke = createDemoStroke(stroke, bounds);
+      const normalizedLength = animatedStroke.length / referenceSize;
+      const duration = animatedStroke.length < 0.5
+        ? 320
+        : Math.min(2100, Math.max(560, Math.round(normalizedLength * 700)));
+      const timedStroke = { ...animatedStroke, beginsAt: nextStrokeStart, duration };
+      nextStrokeStart += duration + strokeGap;
+      return timedStroke;
+    });
+    const holdDuration = 650;
     const fadeDuration = 350;
-    const drawingDuration = demonstrationStrokes.length * strokeDuration
-      + Math.max(0, demonstrationStrokes.length - 1) * strokeGap;
+    const drawingDuration = Math.max(0, nextStrokeStart - strokeGap);
     const lineWidth = Math.max(4, resolvedPenWidth * 0.72);
     let startedAt: number | null = null;
 
@@ -870,12 +884,10 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
       ctx.lineJoin = 'round';
       ctx.setLineDash([]);
 
-      animatedStrokes.forEach((stroke, index) => {
-        const beginsAt = index * (strokeDuration + strokeGap);
-        const rawProgress = (elapsed - beginsAt) / strokeDuration;
+      animatedStrokes.forEach((stroke) => {
+        const rawProgress = (elapsed - stroke.beginsAt) / stroke.duration;
         if (rawProgress <= 0) return;
         const progress = Math.min(1, rawProgress);
-        const easedProgress = 1 - (1 - progress) ** 3;
 
         if (stroke.length < 0.5) {
           const dot = stroke.points[0];
@@ -893,10 +905,10 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
 
         ctx.strokeStyle = 'rgba(14, 165, 233, 0.24)';
         ctx.lineWidth = lineWidth * 1.9;
-        drawDemoStroke(ctx, stroke, easedProgress);
+        drawDemoStroke(ctx, stroke, progress);
         ctx.strokeStyle = '#0284c7';
         ctx.lineWidth = lineWidth;
-        const tip = drawDemoStroke(ctx, stroke, easedProgress);
+        const tip = drawDemoStroke(ctx, stroke, progress);
 
         if (progress < 1) {
           ctx.beginPath();

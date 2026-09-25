@@ -122,10 +122,10 @@ const NUNITO_UPPER: FontStrokeMap = {
     {x:0.75,y:0.02, ex:0.18,ey:0.90, cx:0.90,cy:1.20, c2x:0.12,c2y:0.88},
   ],
 
-  // K: vertical; upper arm from junction → top-right; lower leg from junction → bottom-right.
+  // K: vertical; upper arm from top-right → junction; lower leg from junction → bottom-right.
   K: [
     {x:0.20,y:0.02, ex:0.20,ey:0.96},
-    {x:0.28,y:0.50, ex:0.82,ey:0.02},
+    {x:0.82,y:0.02, ex:0.28,ey:0.50},
     {x:0.28,y:0.50, ex:0.82,ey:0.96},
   ],
 
@@ -470,10 +470,10 @@ const ABEEZEE_UPPER: FontStrokeMap = {
     {x:0.85,y:0.02, ex:0.12,ey:0.89, cx:1.07,cy:1.32, c2x:0.19,c2y:0.88},
   ],
 
-  // K: left stem; upper arm from junction; lower leg → bottom-right — estimated, tune with editor.
+  // K: left stem; upper arm from top-right → junction; lower leg → bottom-right — estimated, tune with editor.
   K: [
     {x:0.09,y:0.04, ex:0.10,ey:0.97},
-    {x:0.18,y:0.50, ex:0.88,ey:0.04},
+    {x:0.88,y:0.04, ex:0.18,ey:0.50},
     {x:0.18,y:0.50, ex:0.88,ey:0.97},
   ],
 
@@ -963,7 +963,7 @@ const CURSIVE_UPPER: FontStrokeMap = {
   // K — editor-tuned.
   K: [
     {x:0.15,y:0.20, ex:0.06,ey:0.94, cx:0.77,cy:-0.34, c2x:0.20,c2y:0.65},
-    {x:0.42,y:0.44, ex:0.99,ey:0.06, cx:0.58,cy:0.35, c2x:0.75,c2y:0.26},
+    {x:0.99,y:0.06, ex:0.42,ey:0.44, cx:0.75,cy:0.26, c2x:0.58,c2y:0.35},
     {x:0.28,y:0.50, ex:0.82,ey:0.96, cx:0.46,cy:0.65, c2x:0.64,c2y:0.81},
   ],
 
