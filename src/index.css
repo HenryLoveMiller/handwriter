@@ -31,3 +31,95 @@ canvas {
   user-select: none;
   pointer-events: none;
 }
+
+.letter-symbol {
+  view-transition-name: letter-symbol;
+}
+
+.practice-stage {
+  view-transition-name: practice-stage;
+}
+
+::view-transition-group(letter-symbol),
+::view-transition-group(practice-stage) {
+  animation-duration: 360ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(letter-symbol) {
+  animation: letter-switch-out 180ms ease-in both;
+}
+
+::view-transition-new(letter-symbol) {
+  animation: letter-switch-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+::view-transition-old(practice-stage) {
+  animation: practice-switch-out 180ms ease-in both;
+}
+
+::view-transition-new(practice-stage) {
+  animation: practice-switch-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes letter-switch-out {
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.94);
+  }
+}
+
+@keyframes letter-switch-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes practice-switch-out {
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.995);
+  }
+}
+
+@keyframes practice-switch-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@supports not (view-transition-name: none) {
+  .letter-symbol {
+    animation: letter-switch-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .letter-canvas-content {
+    animation: practice-switch-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .letter-symbol,
+  .letter-canvas-content {
+    animation: none;
+  }
+
+  ::view-transition-group(letter-symbol),
+  ::view-transition-group(practice-stage),
+  ::view-transition-old(letter-symbol),
+  ::view-transition-new(letter-symbol),
+  ::view-transition-old(practice-stage),
+  ::view-transition-new(practice-stage) {
+    animation-duration: 1ms;
+  }
+}

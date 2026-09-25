@@ -1042,7 +1042,7 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
   }, [letter, caseType, settings.font, settings.guideStrokeWidth, guideFontSize, guideX, guideY, onScore, stopDemonstration, strokes, expectedStrokes]);
 
   return (
-    <div className="flex flex-col flex-1 gap-3 min-h-0">
+    <div className="letter-canvas-content flex flex-col flex-1 gap-3 min-h-0">
       {/* Canvas area */}
       <div
         ref={containerRef}

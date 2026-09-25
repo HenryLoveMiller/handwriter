@@ -34,7 +34,11 @@ export function LetterPicker({
         </button>
 
         <div className="text-center">
-          <div className="text-5xl font-bold text-indigo-700 leading-none select-none" style={{ minWidth: '3rem' }}>
+          <div
+            key={`${caseType}-${currentLetter}`}
+            className="letter-symbol text-5xl font-bold text-indigo-700 leading-none select-none"
+            style={{ minWidth: '3rem' }}
+          >
             {caseType === 'upper' ? currentLetter.toUpperCase() : currentLetter.toLowerCase()}
           </div>
           <div className="text-xs text-gray-400 mt-1">{ALPHABET.indexOf(currentLetter.toUpperCase()) + 1} / 26</div>

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { ALPHABET, FONT_OPTIONS } from './types';
 import type { LetterCase, LetterScore, ToolbarSettings } from './types';
 import { Canvas } from './components/Canvas';
@@ -16,6 +17,24 @@ const DEFAULT_SETTINGS: ToolbarSettings = {
   showStrokeNumbers: true,
 };
 
+type ViewTransitionDocument = Document & {
+  startViewTransition?: (update: () => void) => void;
+};
+
+function updateWithViewTransition(update: () => void) {
+  const startViewTransition = (document as ViewTransitionDocument).startViewTransition;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (!startViewTransition || reduceMotion) {
+    update();
+    return;
+  }
+
+  startViewTransition.call(document, () => {
+    flushSync(update);
+  });
+}
+
 export default function App() {
   const [letterIndex, setLetterIndex] = useState(0);
   const [caseType, setCaseType] = useState<LetterCase>('upper');
@@ -27,9 +46,11 @@ export default function App() {
   const currentLetter = ALPHABET[letterIndex];
 
   const goTo = useCallback((index: number) => {
-    setLetterIndex(((index % 26) + 26) % 26);
-    setCanvasKey((k) => k + 1);
-    setPendingScore(null);
+    updateWithViewTransition(() => {
+      setLetterIndex(((index % 26) + 26) % 26);
+      setCanvasKey((k) => k + 1);
+      setPendingScore(null);
+    });
   }, []);
 
   const handleScore = useCallback((score: LetterScore) => {
@@ -91,14 +112,16 @@ export default function App() {
           onPrev={() => goTo(letterIndex - 1)}
           onNext={() => goTo(letterIndex + 1)}
           onToggleCase={() => {
-            setCaseType((c) => (c === 'upper' ? 'lower' : 'upper'));
-            setCanvasKey((k) => k + 1);
+            updateWithViewTransition(() => {
+              setCaseType((c) => (c === 'upper' ? 'lower' : 'upper'));
+              setCanvasKey((k) => k + 1);
+            });
           }}
         />
       </div>
 
       {/* Canvas */}
-      <div className="flex-1 px-4 pb-4 min-h-0 flex flex-col">
+      <div className="practice-stage flex-1 px-4 pb-4 min-h-0 flex flex-col">
         <Canvas
           key={`${canvasKey}-${currentLetter}-${caseType}-${settings.font.family}`}
           letter={currentLetter}
