@@ -2,10 +2,12 @@
 // (0,0) = top-left of pixel bounding box, (1,1) = bottom-right.
 //
 // Calligraphic principles applied:
-//   • All strokes travel top→bottom or left→right where possible (natural pen motion).
+//   • Simple stems travel top→bottom and horizontal strokes travel left→right.
 //   • Circular/oval forms enter at ~1 o'clock (x≈0.80, top-third) and go counterclockwise.
 //   • Vertical strokes precede bumps/arches on letters like B, D, P, R.
-//   • Crossbars are always the last stroke on a letter (T, H, E, F, etc.).
+//   • Uppercase T is written top bar first, then the center downstroke.
+//   • Other crossbars follow the main stems; lowercase t keeps stem-then-crossbar order.
+//   • Joined diagonal forms such as M, V, and W follow the natural down-up path.
 //   • Where two strokes share a start point they are offset by ~0.06 so
 //     the numbered circles remain visually distinct.
 //
@@ -95,10 +97,12 @@ const NUNITO_UPPER: FontStrokeMap = {
     {x:0.18,y:0.50, ex:0.72,ey:0.50},
   ],
 
-  // G: CCW arc (cubic) entering at ~1 o'clock, ending at mid-right; shelf L from mid-right.
+  // G: CCW arc; second stroke draws the inner shelf L→R, then turns down.
   G: [
     {x:0.88,y:0.11, ex:0.93,ey:0.77, cx:-0.39,cy:-0.21, c2x:0.01,c2y:1.46},
-    {x:0.93,y:0.52, ex:0.52,ey:0.52},
+    {x:0.52,y:0.52, ex:0.93,ey:0.89,
+     cx:0.66,cy:0.52, c2x:0.80,c2y:0.52,
+     mx:0.93,my:0.52, c3x:0.93,c3y:0.63, c4x:0.93,c4y:0.80},
   ],
 
   // H: left vertical; right vertical; crossbar L→R.
@@ -118,10 +122,10 @@ const NUNITO_UPPER: FontStrokeMap = {
     {x:0.75,y:0.02, ex:0.18,ey:0.90, cx:0.90,cy:1.20, c2x:0.12,c2y:0.88},
   ],
 
-  // K: vertical; upper arm from top-right → junction; lower leg from junction → bottom-right.
+  // K: vertical; upper arm from junction → top-right; lower leg from junction → bottom-right.
   K: [
     {x:0.20,y:0.02, ex:0.20,ey:0.96},
-    {x:0.82,y:0.02, ex:0.28,ey:0.50},
+    {x:0.28,y:0.50, ex:0.82,ey:0.02},
     {x:0.28,y:0.50, ex:0.82,ey:0.96},
   ],
 
@@ -131,11 +135,11 @@ const NUNITO_UPPER: FontStrokeMap = {
     {x:0.16,y:0.94, ex:0.88,ey:0.94},
   ],
 
-  // M: left vertical; left diagonal to valley; right diagonal to valley; right vertical.
+  // M: left vertical; diagonal down to valley; diagonal up to top-right; right vertical.
   M: [
     {x:0.10,y:0.02, ex:0.10,ey:0.96},
     {x:0.18,y:0.02, ex:0.50,ey:0.74},
-    {x:0.82,y:0.02, ex:0.50,ey:0.74},
+    {x:0.50,y:0.74, ex:0.82,ey:0.02},
     {x:0.90,y:0.02, ex:0.90,ey:0.96},
   ],
 
@@ -184,10 +188,10 @@ const NUNITO_UPPER: FontStrokeMap = {
      c3x:0.86,c3y:0.56, c4x:0.86,c4y:1.02},
   ],
 
-  // T: vertical center stroke; crossbar L→R.
+  // T: top bar L→R; center downstroke.
   T: [
-    {x:0.50,y:0.02, ex:0.50,ey:0.96},
     {x:0.06,y:0.04, ex:0.94,ey:0.04},
+    {x:0.50,y:0.02, ex:0.50,ey:0.96},
   ],
 
   // U: single sweep-under stroke — departs downward left, sweeps under, arrives upward right.
@@ -195,18 +199,18 @@ const NUNITO_UPPER: FontStrokeMap = {
     {x:0.18,y:0.02, ex:0.82,ey:0.06, cx:0.04,cy:1.30, c2x:0.98,c2y:1.15},
   ],
 
-  // V: left diagonal top→point; right diagonal top→point.
+  // V: diagonal down to the point, then diagonal up to the right.
   V: [
     {x:0.10,y:0.02, ex:0.50,ey:0.96},
-    {x:0.90,y:0.02, ex:0.50,ey:0.96},
+    {x:0.50,y:0.96, ex:0.90,ey:0.02},
   ],
 
-  // W: four downward strokes (left-to-right across the top).
+  // W: continuous zigzag direction — down, up, down, up.
   W: [
     {x:0.06,y:0.02, ex:0.24,ey:0.96},
-    {x:0.32,y:0.02, ex:0.44,ey:0.96},
-    {x:0.66,y:0.02, ex:0.74,ey:0.96},
-    {x:0.92,y:0.02, ex:0.94,ey:0.96},
+    {x:0.24,y:0.96, ex:0.50,ey:0.02},
+    {x:0.50,y:0.02, ex:0.76,ey:0.96},
+    {x:0.76,y:0.96, ex:0.94,ey:0.02},
   ],
 
   // X: forward diagonal (top-left → bottom-right); back diagonal (top-right → bottom-left).
@@ -301,11 +305,13 @@ const NUNITO_LOWER: FontStrokeMap = {
     {x:0.52,y:0.05, ex:0.52,ey:0.05},
   ],
 
-  // k: tall downstroke; upper arm → junction; lower leg from junction.
+  // k: tall downstroke; second stroke forms a small x-height loop, then sweeps down-right.
   k: [
     {x:0.20,y:0.02, ex:0.20,ey:0.96},
-    {x:0.80,y:0.06, ex:0.30,ey:0.52},
-    {x:0.30,y:0.52, ex:0.80,ey:0.94},
+    {x:0.26,y:0.52, ex:0.80,ey:0.94,
+     cx:0.40,cy:0.44, c2x:0.62,c2y:0.35,
+     mx:0.78,my:0.35, c3x:0.94,c3y:0.43, c4x:0.58,c4y:0.66,
+     mx2:0.34,my2:0.56, c5x:0.48,c5y:0.64, c6x:0.68,c6y:0.84},
   ],
 
   // l: single tall downstroke.
@@ -369,24 +375,26 @@ const NUNITO_LOWER: FontStrokeMap = {
     {x:0.10,y:0.42, ex:0.82,ey:0.42},
   ],
 
-  // u: left downstroke curving under; right downstroke.
+  // u: left downstroke curving under; right downstroke finishes with a small exit hook.
   u: [
     {x:0.18,y:0.08, ex:0.50,ey:0.94},
-    {x:0.82,y:0.08, ex:0.82,ey:0.94},
+    {x:0.82,y:0.08, ex:1.00,ey:0.86,
+     cx:0.82,cy:0.38, c2x:0.82,c2y:0.72,
+     mx:0.82,my:0.92, c3x:0.86,c3y:0.99, c4x:0.96,c4y:0.91},
   ],
 
-  // v: left diagonal top→point; right diagonal top→point.
+  // v: diagonal down to the point, then diagonal up to the right.
   v: [
     {x:0.08,y:0.08, ex:0.50,ey:0.94},
-    {x:0.92,y:0.08, ex:0.50,ey:0.94},
+    {x:0.50,y:0.94, ex:0.92,ey:0.08},
   ],
 
-  // w: four downward strokes L→R.
+  // w: continuous zigzag direction — down, up, down, up.
   w: [
     {x:0.06,y:0.08, ex:0.22,ey:0.94},
-    {x:0.34,y:0.08, ex:0.50,ey:0.94},
-    {x:0.64,y:0.08, ex:0.72,ey:0.94},
-    {x:0.92,y:0.08, ex:0.90,ey:0.94},
+    {x:0.22,y:0.94, ex:0.50,ey:0.08},
+    {x:0.50,y:0.08, ex:0.72,ey:0.94},
+    {x:0.72,y:0.94, ex:0.92,ey:0.08},
   ],
 
   // x: forward diagonal; back diagonal.
@@ -395,10 +403,12 @@ const NUNITO_LOWER: FontStrokeMap = {
     {x:0.92,y:0.08, ex:0.08,ey:0.94},
   ],
 
-  // y: left arm top→junction; right arm continues through descender.
+  // y: left arm top→junction; right arm continues through descender and hooks up-left.
   y: [
     {x:0.10,y:0.08, ex:0.50,ey:0.54},
-    {x:0.88,y:0.08, ex:0.40,ey:0.96},
+    {x:0.88,y:0.08, ex:0.14,ey:0.82,
+     cx:0.76,cy:0.40, c2x:0.52,c2y:0.78,
+     mx:0.40,my:0.96, c3x:0.34,c3y:1.02, c4x:0.20,c4y:0.94},
   ],
 
   // z: top bar L→R; diagonal top-right → bottom-left; bottom bar L→R.
@@ -440,10 +450,12 @@ const ABEEZEE_UPPER: FontStrokeMap = {
     {x:0.12,y:0.95, ex:0.94,ey:0.95},
   ],
 
-  // G: CCW arc like C but ending at lower-right; shelf going left from mid-right — from editor.
+  // G: CCW arc like C; second stroke draws the shelf L→R, then turns down.
   G: [
     {x:0.88,y:0.11, ex:0.93,ey:0.77, cx:-0.39,cy:-0.21, c2x:0.01,c2y:1.46},
-    {x:0.93,y:0.52, ex:0.60,ey:0.53},
+    {x:0.60,y:0.53, ex:0.93,ey:0.89,
+     cx:0.71,cy:0.53, c2x:0.82,c2y:0.52,
+     mx:0.93,my:0.52, c3x:0.93,c3y:0.63, c4x:0.93,c4y:0.80},
   ],
 
   // H: left stem; right stem; crossbar L→R — from editor.
@@ -458,10 +470,10 @@ const ABEEZEE_UPPER: FontStrokeMap = {
     {x:0.85,y:0.02, ex:0.12,ey:0.89, cx:1.07,cy:1.32, c2x:0.19,c2y:0.88},
   ],
 
-  // K: left stem; upper arm → junction; lower leg → bottom-right — estimated, tune with editor.
+  // K: left stem; upper arm from junction; lower leg → bottom-right — estimated, tune with editor.
   K: [
     {x:0.09,y:0.04, ex:0.10,ey:0.97},
-    {x:0.88,y:0.04, ex:0.18,ey:0.50},
+    {x:0.18,y:0.50, ex:0.88,ey:0.04},
     {x:0.18,y:0.50, ex:0.88,ey:0.97},
   ],
 
@@ -515,10 +527,10 @@ const ABEEZEE_UPPER: FontStrokeMap = {
     {x:0.86,y:0.08, ex:0.08,ey:0.87, cx:0.09,cy:-0.04, c2x:-0.22,c2y:0.38, mx:0.84,my:0.58, c3x:1.06,c3y:0.79, c4x:0.70,c4y:1.11},
   ],
 
-  // T: center vertical; crossbar L→R — estimated.
+  // T: top bar L→R; center downstroke — estimated.
   T: [
-    {x:0.50,y:0.04, ex:0.50,ey:0.97},
     {x:0.07,y:0.05, ex:0.95,ey:0.05},
+    {x:0.50,y:0.04, ex:0.50,ey:0.97},
   ],
 
   // U: single stroke sweeping under — from editor.
@@ -526,19 +538,18 @@ const ABEEZEE_UPPER: FontStrokeMap = {
     {x:0.09,y:0.04, ex:0.94,ey:0.10, cx:-0.03,cy:1.38, c2x:1.10,c2y:1.11},
   ],
 
-  // V: left diagonal → point; right diagonal → point — estimated.
+  // V: diagonal down to the point, then diagonal up to the right — estimated.
   V: [
     {x:0.08,y:0.04, ex:0.50,ey:0.97},
-    {x:0.92,y:0.04, ex:0.50,ey:0.97},
+    {x:0.50,y:0.97, ex:0.92,ey:0.04},
   ],
 
-  // W: four arms all starting at top of cap-height, converging to two valley points.
-  // Inner arms corrected to y:0.04 — numbered circles appear at letter-top, not mid-letter.
+  // W: continuous zigzag direction — down, up, down, up.
   W: [
     {x:0.05,y:0.04, ex:0.28,ey:0.97},   // left outer: far-left top → left valley
-    {x:0.44,y:0.04, ex:0.28,ey:0.97},   // left inner: center-left top → left valley
-    {x:0.55,y:0.04, ex:0.71,ey:0.95},   // right inner: center-right top → right valley
-    {x:0.95,y:0.04, ex:0.72,ey:0.97},   // right outer: far-right top → right valley
+    {x:0.28,y:0.97, ex:0.50,ey:0.04},   // left valley → center peak
+    {x:0.50,y:0.04, ex:0.72,ey:0.97},   // center peak → right valley
+    {x:0.72,y:0.97, ex:0.95,ey:0.04},   // right valley → far-right top
   ],
 
   // X: forward diagonal; back diagonal — estimated.
@@ -630,14 +641,16 @@ const ABEEZEE_LOWER: FontStrokeMap = {
   // j: body descends then hooks; dot — from editor.
   j: [
     {x:0.77,y:0.25, ex:0.13,ey:0.94, cx:0.84,cy:0.77, c2x:0.81,c2y:1.07},
-    {x:0.76,y:0.06, ex:0.60,ey:0.04},
+    {x:0.76,y:0.06, ex:0.76,ey:0.06},
   ],
 
-  // k: tall stem; upper arm; lower leg — from editor.
+  // k: tall stem; second stroke forms a small x-height loop, then sweeps down-right.
   k: [
     {x:0.12,y:0.02, ex:0.12,ey:0.96},
-    {x:0.75,y:0.35, ex:0.30,ey:0.56},
-    {x:0.22,y:0.52, ex:0.88,ey:0.94},
+    {x:0.24,y:0.54, ex:0.88,ey:0.94,
+     cx:0.38,cy:0.47, c2x:0.58,c2y:0.36,
+     mx:0.75,my:0.35, c3x:0.90,c3y:0.43, c4x:0.56,c4y:0.66,
+     mx2:0.34,my2:0.58, c5x:0.48,c5y:0.65, c6x:0.74,c6y:0.85},
   ],
 
   // l: tall stroke with curved tail — from editor.
@@ -701,19 +714,20 @@ const ABEEZEE_LOWER: FontStrokeMap = {
     {x:-0.05,y:0.29, ex:0.88,ey:0.30},
   ],
 
-  // u: two curved strokes — from editor.
+  // u: two curved strokes — from editor; the right stem ends with an exit hook.
   u: [
     {x:0.14,y:0.10, ex:0.73,ey:0.79, cx:0.10,cy:0.78, c2x:0.16,c2y:1.17},
-    {x:0.81,y:0.07, ex:0.84,ey:0.94, cx:0.82,cy:0.54, c2x:0.82,c2y:0.74},
+    {x:0.81,y:0.07, ex:1.00,ey:0.86,
+     cx:0.82,cy:0.42, c2x:0.82,c2y:0.73,
+     mx:0.84,my:0.94, c3x:0.88,c3y:1.00, c4x:0.97,c4y:0.91},
   ],
 
-  // w: four arms all starting at top of x-height, converging to two valley points.
-  // Inner arms start at y:0.08 like the outer arms — numbered circles appear at letter-top.
+  // w: continuous zigzag direction — down, up, down, up.
   w: [
     {x:0.05,y:0.08, ex:0.26,ey:0.94},   // left outer: far-left top → left valley
-    {x:0.44,y:0.08, ex:0.26,ey:0.94},   // left inner: center-left top → left valley
-    {x:0.55,y:0.08, ex:0.70,ey:0.94},   // right inner: center-right top → right valley
-    {x:0.95,y:0.08, ex:0.70,ey:0.94},   // right outer: far-right top → right valley
+    {x:0.26,y:0.94, ex:0.50,ey:0.08},   // left valley → center peak
+    {x:0.50,y:0.08, ex:0.70,ey:0.94},   // center peak → right valley
+    {x:0.70,y:0.94, ex:0.95,ey:0.08},   // right valley → far-right top
   ],
 };
 
@@ -774,13 +788,13 @@ const CURSIVE_LOWER: FontStrokeMap = {
   // i — 2 strokes: body + dot
   i: [
     {x:0.47,y:0.36, ex:1.02,ey:0.69, cx:0.07,cy:0.84, c2x:-0.02,c2y:1.28},
-    {x:0.79,y:0.07, ex:0.74,ey:0.07},
+    {x:0.79,y:0.07, ex:0.79,ey:0.07},
   ],
 
   // j — 2 strokes: body + dot
   j: [
     {x:0.73,y:0.24, ex:1.01,ey:0.51, cx:0.61,cy:1.23, c2x:-1.11,c2y:1.12},
-    {x:0.76,y:0.06, ex:0.60,ey:0.04},
+    {x:0.76,y:0.06, ex:0.76,ey:0.06},
   ],
 
   // k — 1 stroke: ascender + upper arm + lower leg (3 segments)
@@ -949,7 +963,7 @@ const CURSIVE_UPPER: FontStrokeMap = {
   // K — editor-tuned.
   K: [
     {x:0.15,y:0.20, ex:0.06,ey:0.94, cx:0.77,cy:-0.34, c2x:0.20,c2y:0.65},
-    {x:0.99,y:0.06, ex:0.42,ey:0.44, cx:0.75,cy:0.26, c2x:0.58,c2y:0.35},
+    {x:0.42,y:0.44, ex:0.99,ey:0.06, cx:0.58,cy:0.35, c2x:0.75,c2y:0.26},
     {x:0.28,y:0.50, ex:0.82,ey:0.96, cx:0.46,cy:0.65, c2x:0.64,c2y:0.81},
   ],
 
@@ -1001,10 +1015,10 @@ const CURSIVE_UPPER: FontStrokeMap = {
     {x:0.85,y:0.34, ex:0.10,ey:0.66, cx:1.21,cy:-0.38, c2x:-0.27,c2y:0.32, mx:0.50,my:0.50, c3x:1.65,c3y:0.82, c4x:-0.04,c4y:1.31},
   ],
 
-  // T — editor-tuned.
+  // T — top flourish first, then the center downstroke.
   T: [
-    {x:0.46,y:0.13, ex:0.13,ey:0.98, cx:0.40,cy:0.31, c2x:0.26,c2y:0.63},
     {x:0.06,y:0.04, ex:0.94,ey:0.04, cx:0.35,cy:0.04, c2x:0.65,c2y:0.04},
+    {x:0.46,y:0.13, ex:0.13,ey:0.98, cx:0.40,cy:0.31, c2x:0.26,c2y:0.63},
   ],
 
   // U — editor-tuned.

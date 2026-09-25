@@ -37,6 +37,141 @@ function formatStrokeData(strokes: StrokeStart[]): string {
   }).join(',\n');
 }
 
+interface StrokeBounds {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+interface DemoPoint {
+  x: number;
+  y: number;
+}
+
+interface DemoStroke {
+  points: DemoPoint[];
+  distances: number[];
+  length: number;
+}
+
+function createDemoStroke(stroke: StrokeStart, bounds: StrokeBounds): DemoStroke {
+  const point = (x: number, y: number): DemoPoint => ({
+    x: bounds.left + x * bounds.width,
+    y: bounds.top + y * bounds.height,
+  });
+  const appendQuadratic = (points: DemoPoint[], start: DemoPoint, control: DemoPoint, end: DemoPoint) => {
+    for (let step = 1; step <= 36; step++) {
+      const t = step / 36;
+      const inverse = 1 - t;
+      points.push({
+        x: inverse ** 2 * start.x + 2 * inverse * t * control.x + t ** 2 * end.x,
+        y: inverse ** 2 * start.y + 2 * inverse * t * control.y + t ** 2 * end.y,
+      });
+    }
+  };
+  const appendCubic = (
+    points: DemoPoint[],
+    start: DemoPoint,
+    control1: DemoPoint,
+    control2: DemoPoint,
+    end: DemoPoint
+  ) => {
+    for (let step = 1; step <= 48; step++) {
+      const t = step / 48;
+      const inverse = 1 - t;
+      points.push({
+        x: inverse ** 3 * start.x
+          + 3 * inverse ** 2 * t * control1.x
+          + 3 * inverse * t ** 2 * control2.x
+          + t ** 3 * end.x,
+        y: inverse ** 3 * start.y
+          + 3 * inverse ** 2 * t * control1.y
+          + 3 * inverse * t ** 2 * control2.y
+          + t ** 3 * end.y,
+      });
+    }
+  };
+
+  const start = point(stroke.x, stroke.y);
+  const end = point(stroke.ex, stroke.ey);
+  const points = [start];
+  const hasCurve = stroke.cx !== undefined && stroke.cy !== undefined;
+  const hasCubic = hasCurve && stroke.c2x !== undefined && stroke.c2y !== undefined;
+  const hasMid = stroke.mx !== undefined && stroke.my !== undefined;
+  const hasMid2 = stroke.mx2 !== undefined && stroke.my2 !== undefined;
+  const hasMid3 = stroke.mx3 !== undefined && stroke.my3 !== undefined;
+
+  if (hasMid && hasCubic) {
+    const mid = point(stroke.mx!, stroke.my!);
+    appendCubic(points, start, point(stroke.cx!, stroke.cy!), point(stroke.c2x!, stroke.c2y!), mid);
+    if (hasMid2) {
+      const mid2 = point(stroke.mx2!, stroke.my2!);
+      appendCubic(
+        points,
+        mid,
+        point(stroke.c3x ?? stroke.mx!, stroke.c3y ?? stroke.my!),
+        point(stroke.c4x ?? stroke.mx2!, stroke.c4y ?? stroke.my2!),
+        mid2
+      );
+      if (hasMid3) {
+        const mid3 = point(stroke.mx3!, stroke.my3!);
+        appendCubic(points, mid2, point(stroke.c5x ?? stroke.mx2!, stroke.c5y ?? stroke.my2!), point(stroke.c6x ?? stroke.mx3!, stroke.c6y ?? stroke.my3!), mid3);
+        appendCubic(points, mid3, point(stroke.c7x ?? stroke.mx3!, stroke.c7y ?? stroke.my3!), point(stroke.c8x ?? stroke.ex, stroke.c8y ?? stroke.ey), end);
+      } else {
+        appendCubic(points, mid2, point(stroke.c5x ?? stroke.mx2!, stroke.c5y ?? stroke.my2!), point(stroke.c6x ?? stroke.ex, stroke.c6y ?? stroke.ey), end);
+      }
+    } else {
+      appendCubic(points, mid, point(stroke.c3x ?? stroke.mx!, stroke.c3y ?? stroke.my!), point(stroke.c4x ?? stroke.ex, stroke.c4y ?? stroke.ey), end);
+    }
+  } else if (hasCubic) {
+    appendCubic(points, start, point(stroke.cx!, stroke.cy!), point(stroke.c2x!, stroke.c2y!), end);
+  } else if (hasCurve) {
+    appendQuadratic(points, start, point(stroke.cx!, stroke.cy!), end);
+  } else {
+    points.push(end);
+  }
+
+  const distances = [0];
+  for (let index = 1; index < points.length; index++) {
+    distances.push(distances[index - 1] + Math.hypot(
+      points[index].x - points[index - 1].x,
+      points[index].y - points[index - 1].y
+    ));
+  }
+  return { points, distances, length: distances[distances.length - 1] };
+}
+
+function drawDemoStroke(ctx: CanvasRenderingContext2D, stroke: DemoStroke, progress: number): DemoPoint {
+  const targetDistance = stroke.length * progress;
+  let tip = stroke.points[0];
+  ctx.beginPath();
+  ctx.moveTo(tip.x, tip.y);
+
+  for (let index = 1; index < stroke.points.length; index++) {
+    const point = stroke.points[index];
+    const distance = stroke.distances[index];
+    if (distance <= targetDistance) {
+      ctx.lineTo(point.x, point.y);
+      tip = point;
+      continue;
+    }
+
+    const previous = stroke.points[index - 1];
+    const previousDistance = stroke.distances[index - 1];
+    const segmentProgress = (targetDistance - previousDistance) / (distance - previousDistance);
+    tip = {
+      x: previous.x + (point.x - previous.x) * segmentProgress,
+      y: previous.y + (point.y - previous.y) * segmentProgress,
+    };
+    ctx.lineTo(tip.x, tip.y);
+    break;
+  }
+
+  ctx.stroke();
+  return tip;
+}
+
 interface Props {
   letter: string;
   caseType: LetterCase;
@@ -52,13 +187,17 @@ const GUIDE_FONT_SIZE_RATIO = 0.72;
 export function Canvas({ letter, caseType, settings, onScore, onClear, score, onNext }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const guideCanvasRef = useRef<HTMLCanvasElement>(null);
+  const demoCanvasRef = useRef<HTMLCanvasElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
   const editCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const bboxRef = useRef<{ left: number; top: number; width: number; height: number } | null>(null);
+  const bboxRef = useRef<StrokeBounds | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const hasAutoPlayedDemoRef = useRef(false);
   const dragRef = useRef<{ strokeIdx: number; field: 'start' | 'end' | 'cp1' | 'cp2' | 'mid' | 'cp3' | 'cp4' | 'mid2' | 'cp5' | 'cp6' | 'mid3' | 'cp7' | 'cp8' } | null>(null);
   const [size, setSize] = useState({ w: 600, h: 600 });
   const [showOverlay, setShowOverlay] = useState(false);
+  const [isDemonstrating, setIsDemonstrating] = useState(false);
   const [arrowEditMode, setArrowEditMode] = useState(false);
   const [draftStrokes, setDraftStrokes] = useState<StrokeStart[] | null>(null);
 
@@ -131,17 +270,26 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
       ctx.globalCompositeOperation = 'source-over';
     }
 
+    const metrics = ctx.measureText(displayLetter);
+    const letterBounds: StrokeBounds = {
+      left: guideX - metrics.actualBoundingBoxLeft,
+      top: guideY - metrics.actualBoundingBoxAscent,
+      width: metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight,
+      height: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent,
+    };
+    bboxRef.current = letterBounds;
+
     // Draw stroke order arrows and numbers
     if (settings.showStrokeNumbers) {
       const baseStrokeList = getStrokes(settings.font.family, caseType, caseType === 'upper' ? letter.toUpperCase() : letter.toLowerCase());
       const strokeList = (arrowEditMode && draftStrokes) ? draftStrokes : baseStrokeList;
       if (strokeList && strokeList.length > 0) {
-        const m = ctx.measureText(displayLetter);
-        const boxLeft   = guideX - m.actualBoundingBoxLeft;
-        const boxTop    = guideY - m.actualBoundingBoxAscent;
-        const boxWidth  = m.actualBoundingBoxLeft + m.actualBoundingBoxRight;
-        const boxHeight = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
-        bboxRef.current = { left: boxLeft, top: boxTop, width: boxWidth, height: boxHeight };
+        const {
+          left: boxLeft,
+          top: boxTop,
+          width: boxWidth,
+          height: boxHeight,
+        } = letterBounds;
 
         const r = Math.max(13, guideFontSize * 0.055);
         const fontSize = Math.max(10, r * 1.15);
@@ -622,16 +770,179 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
     dragRef.current = null;
   }, []);
 
+  const stopDemonstration = useCallback(() => {
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    const canvas = demoCanvasRef.current;
+    if (canvas) {
+      canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    setIsDemonstrating(false);
+  }, []);
+
+  useEffect(() => () => {
+    stopDemonstration();
+  }, [caseType, letter, settings.font.family, stopDemonstration]);
+
+  const handleDemonstrate = useCallback(() => {
+    if (isDemonstrating) {
+      stopDemonstration();
+      return;
+    }
+
+    const canvas = demoCanvasRef.current;
+    const bounds = bboxRef.current;
+    const displayLetter = caseType === 'upper' ? letter.toUpperCase() : letter.toLowerCase();
+    const demonstrationStrokes = getStrokes(settings.font.family, caseType, displayLetter);
+    if (!canvas || !bounds || demonstrationStrokes.length === 0) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = canvas.width;
+    maskCanvas.height = canvas.height;
+    const maskContext = maskCanvas.getContext('2d');
+    if (!maskContext) return;
+
+    maskContext.font = `${guideFontSize}px "${settings.font.family}"`;
+    maskContext.textAlign = 'center';
+    maskContext.textBaseline = 'middle';
+    maskContext.lineJoin = 'round';
+    maskContext.lineCap = 'round';
+    maskContext.fillStyle = '#000';
+    if (settings.guideStrokeWidth > 0) {
+      maskContext.strokeStyle = '#000';
+      maskContext.lineWidth = settings.guideStrokeWidth;
+      maskContext.strokeText(displayLetter, guideX, guideY);
+    }
+    maskContext.fillText(displayLetter, guideX, guideY);
+    if (settings.guideStrokeWidth < 0) {
+      maskContext.globalCompositeOperation = 'destination-out';
+      maskContext.strokeStyle = '#000';
+      maskContext.lineWidth = Math.abs(settings.guideStrokeWidth);
+      maskContext.strokeText(displayLetter, guideX, guideY);
+    }
+
+    const animatedStrokes = demonstrationStrokes.map((stroke) => createDemoStroke(stroke, bounds));
+    const strokeDuration = 720;
+    const strokeGap = 180;
+    const holdDuration = 450;
+    const fadeDuration = 350;
+    const drawingDuration = demonstrationStrokes.length * strokeDuration
+      + Math.max(0, demonstrationStrokes.length - 1) * strokeGap;
+    const lineWidth = Math.max(4, resolvedPenWidth * 0.72);
+    let startedAt: number | null = null;
+
+    setShowOverlay(false);
+    setIsDemonstrating(true);
+
+    const animate = (timestamp: number) => {
+      startedAt ??= timestamp;
+      const elapsed = timestamp - startedAt;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const fadeStart = drawingDuration + holdDuration;
+      const opacity = elapsed <= fadeStart
+        ? 1
+        : Math.max(0, 1 - (elapsed - fadeStart) / fadeDuration);
+
+      ctx.save();
+      ctx.globalAlpha = opacity;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.setLineDash([]);
+
+      animatedStrokes.forEach((stroke, index) => {
+        const beginsAt = index * (strokeDuration + strokeGap);
+        const rawProgress = (elapsed - beginsAt) / strokeDuration;
+        if (rawProgress <= 0) return;
+        const progress = Math.min(1, rawProgress);
+        const easedProgress = 1 - (1 - progress) ** 3;
+
+        if (stroke.length < 0.5) {
+          const dot = stroke.points[0];
+          const radius = Math.max(5, lineWidth * 0.42);
+          ctx.beginPath();
+          ctx.arc(dot.x, dot.y, radius * 1.65, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(14, 165, 233, 0.24)';
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(dot.x, dot.y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = '#0284c7';
+          ctx.fill();
+          return;
+        }
+
+        ctx.strokeStyle = 'rgba(14, 165, 233, 0.24)';
+        ctx.lineWidth = lineWidth * 1.9;
+        drawDemoStroke(ctx, stroke, easedProgress);
+        ctx.strokeStyle = '#0284c7';
+        ctx.lineWidth = lineWidth;
+        const tip = drawDemoStroke(ctx, stroke, easedProgress);
+
+        if (progress < 1) {
+          ctx.beginPath();
+          ctx.arc(tip.x, tip.y, Math.max(5, lineWidth * 0.38), 0, Math.PI * 2);
+          ctx.fillStyle = '#e0f2fe';
+          ctx.fill();
+          ctx.strokeStyle = '#0284c7';
+          ctx.lineWidth = Math.max(2, lineWidth * 0.12);
+          ctx.stroke();
+        }
+      });
+
+      ctx.restore();
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-in';
+      ctx.drawImage(maskCanvas, 0, 0);
+      ctx.restore();
+
+      if (elapsed < drawingDuration + holdDuration + fadeDuration) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        animationFrameRef.current = null;
+        setIsDemonstrating(false);
+      }
+    };
+
+    animationFrameRef.current = requestAnimationFrame(animate);
+  }, [caseType, guideFontSize, guideX, guideY, isDemonstrating, letter, resolvedPenWidth, settings.font.family, settings.guideStrokeWidth, stopDemonstration]);
+
+  useEffect(() => {
+    if (hasAutoPlayedDemoRef.current || expectedStrokes === 0) return;
+
+    let frameId: number;
+    const playWhenReady = () => {
+      if (hasAutoPlayedDemoRef.current) return;
+
+      if (bboxRef.current && demoCanvasRef.current) {
+        hasAutoPlayedDemoRef.current = true;
+        handleDemonstrate();
+        return;
+      }
+
+      frameId = requestAnimationFrame(playWhenReady);
+    };
+
+    frameId = requestAnimationFrame(playWhenReady);
+    return () => cancelAnimationFrame(frameId);
+  }, [expectedStrokes, handleDemonstrate]);
+
   // Pointer handlers
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
+      stopDemonstration();
       canvas.setPointerCapture(e.pointerId);
       setShowOverlay(false);
       startStroke(e.nativeEvent, canvas);
     },
-    [startStroke]
+    [startStroke, stopDemonstration]
   );
 
   const onPointerMove = useCallback(
@@ -651,22 +962,25 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
   const handleClear = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    stopDemonstration();
     clearCanvas(canvas);
     setShowOverlay(false);
     onClear?.();
-  }, [clearCanvas, onClear]);
+  }, [clearCanvas, onClear, stopDemonstration]);
 
   const handleUndo = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    stopDemonstration();
     undoLastStroke(canvas);
     setShowOverlay(false);
-  }, [undoLastStroke]);
+  }, [stopDemonstration, undoLastStroke]);
 
   const handleScore = useCallback(() => {
     const canvas = canvasRef.current;
     const overlay = overlayRef.current;
     if (!canvas || !overlay) return;
+    stopDemonstration();
 
     const result = scoreAttempt(
       canvas,
@@ -700,7 +1014,7 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
 
     playScoreSound(result.grade);
     onScore(result);
-  }, [letter, caseType, settings.font, settings.guideStrokeWidth, guideFontSize, guideX, guideY, onScore, strokes.length, expectedStrokes]);
+  }, [letter, caseType, settings.font, settings.guideStrokeWidth, guideFontSize, guideX, guideY, onScore, stopDemonstration, strokes, expectedStrokes]);
 
   return (
     <div className="flex flex-col flex-1 gap-3 min-h-0">
@@ -730,6 +1044,14 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerLeave={onPointerUp}
+        />
+
+        {/* Animated stroke demonstration canvas */}
+        <canvas
+          ref={demoCanvasRef}
+          width={size.w}
+          height={size.h}
+          className="absolute inset-0 w-full h-full pointer-events-none"
         />
 
         {/* Score overlay canvas */}
@@ -811,6 +1133,18 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
 
       {/* Action buttons */}
       <div className="flex gap-2 justify-center flex-wrap">
+        <button
+          onClick={handleDemonstrate}
+          disabled={expectedStrokes === 0}
+          className={`px-4 py-3.5 sm:px-5 sm:py-3.5 rounded-2xl shadow-md font-semibold text-sm active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+            isDemonstrating
+              ? 'bg-sky-600 text-white hover:bg-sky-700'
+              : 'bg-sky-50 text-sky-700 hover:bg-sky-100'
+          }`}
+        >
+          {isDemonstrating ? '■ Stop Demo' : '▶ Demo'}
+        </button>
+
         <button
           onClick={handleUndo}
           disabled={strokes.length === 0}
