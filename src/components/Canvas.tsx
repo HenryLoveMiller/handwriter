@@ -192,6 +192,8 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
   const editCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const bboxRef = useRef<StrokeBounds | null>(null);
+  const bboxSizeRef = useRef({ w: 0, h: 0 });
+  const measuredSizeRef = useRef({ w: 0, h: 0 });
   const animationFrameRef = useRef<number | null>(null);
   const hasAutoPlayedDemoRef = useRef(false);
   const dragRef = useRef<{ strokeIdx: number; field: 'start' | 'end' | 'cp1' | 'cp2' | 'mid' | 'cp3' | 'cp4' | 'mid2' | 'cp5' | 'cp6' | 'mid3' | 'cp7' | 'cp8' } | null>(null);
@@ -230,7 +232,9 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
     if (!el) return;
     const ro = new ResizeObserver(() => {
       const rect = el.getBoundingClientRect();
-      setSize({ w: Math.floor(rect.width), h: Math.floor(rect.height) });
+      const nextSize = { w: Math.floor(rect.width), h: Math.floor(rect.height) };
+      measuredSizeRef.current = nextSize;
+      setSize(nextSize);
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -278,6 +282,7 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
       height: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent,
     };
     bboxRef.current = letterBounds;
+    bboxSizeRef.current = { w: canvas.width, h: canvas.height };
 
     // Draw stroke order arrows and numbers
     if (settings.showStrokeNumbers) {
@@ -794,9 +799,19 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
 
     const canvas = demoCanvasRef.current;
     const bounds = bboxRef.current;
+    const boundsSize = bboxSizeRef.current;
+    const measuredSize = measuredSizeRef.current;
     const displayLetter = caseType === 'upper' ? letter.toUpperCase() : letter.toLowerCase();
     const demonstrationStrokes = getStrokes(settings.font.family, caseType, displayLetter);
-    if (!canvas || !bounds || demonstrationStrokes.length === 0) return;
+    if (
+      !canvas
+      || !bounds
+      || demonstrationStrokes.length === 0
+      || canvas.width !== measuredSize.w
+      || canvas.height !== measuredSize.h
+      || canvas.width !== boundsSize.w
+      || canvas.height !== boundsSize.h
+    ) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -919,7 +934,17 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
     const playWhenReady = () => {
       if (hasAutoPlayedDemoRef.current) return;
 
-      if (bboxRef.current && demoCanvasRef.current) {
+      const canvas = demoCanvasRef.current;
+      const boundsSize = bboxSizeRef.current;
+      const measuredSize = measuredSizeRef.current;
+      const isReady = canvas
+        && bboxRef.current
+        && canvas.width === measuredSize.w
+        && canvas.height === measuredSize.h
+        && canvas.width === boundsSize.w
+        && canvas.height === boundsSize.h;
+
+      if (isReady) {
         hasAutoPlayedDemoRef.current = true;
         handleDemonstrate();
         return;
