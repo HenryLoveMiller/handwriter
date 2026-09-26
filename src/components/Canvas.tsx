@@ -147,6 +147,77 @@ function createDemoStroke(stroke: StrokeStart, bounds: StrokeBounds): DemoStroke
   return { points, distances, length: distances[distances.length - 1] };
 }
 
+interface StrokeFitResult {
+  overall: number;
+  perStroke: number[];
+  missRanges: string[];
+}
+
+function calculateStrokeFit(
+  ctx: CanvasRenderingContext2D,
+  strokes: StrokeStart[],
+  bounds: StrokeBounds,
+  tolerance: number
+): StrokeFitResult | null {
+  if (strokes.length === 0) return null;
+
+  const { width, height } = ctx.canvas;
+  const pixels = ctx.getImageData(0, 0, width, height).data;
+  const radius = Math.max(1, Math.round(tolerance));
+  const radiusSquared = radius * radius;
+  let matchedPoints = 0;
+  let totalPoints = 0;
+  const perStroke: number[] = [];
+  const missRanges: string[] = [];
+
+  strokes.forEach((stroke) => {
+    let strokeMatchedPoints = 0;
+    const missedPoints: DemoPoint[] = [];
+    const strokePoints = createDemoStroke(stroke, bounds).points;
+    strokePoints.forEach((point) => {
+      totalPoints++;
+      const centerX = Math.round(point.x);
+      const centerY = Math.round(point.y);
+      let matched = false;
+
+      for (let offsetY = -radius; offsetY <= radius && !matched; offsetY++) {
+        for (let offsetX = -radius; offsetX <= radius; offsetX++) {
+          if (offsetX * offsetX + offsetY * offsetY > radiusSquared) continue;
+          const x = centerX + offsetX;
+          const y = centerY + offsetY;
+          if (x < 0 || y < 0 || x >= width || y >= height) continue;
+          if (pixels[(y * width + x) * 4 + 3] > 32) {
+            matched = true;
+            break;
+          }
+        }
+      }
+
+      if (matched) {
+        matchedPoints++;
+        strokeMatchedPoints++;
+      } else missedPoints.push(point);
+    });
+    perStroke.push(Math.round((strokeMatchedPoints / strokePoints.length) * 100));
+    if (missedPoints.length === 0) {
+      missRanges.push('-');
+    } else {
+      const normalizedX = missedPoints.map((point) => (point.x - bounds.left) / bounds.width);
+      const normalizedY = missedPoints.map((point) => (point.y - bounds.top) / bounds.height);
+      missRanges.push([
+        Math.min(...normalizedX).toFixed(2),
+        Math.max(...normalizedX).toFixed(2),
+        Math.min(...normalizedY).toFixed(2),
+        Math.max(...normalizedY).toFixed(2),
+      ].join(':'));
+    }
+  });
+
+  return totalPoints === 0
+    ? null
+    : { overall: Math.round((matchedPoints / totalPoints) * 100), perStroke, missRanges };
+}
+
 function drawDemoStroke(ctx: CanvasRenderingContext2D, stroke: DemoStroke, progress: number): DemoPoint {
   const targetDistance = stroke.length * progress;
   let tip = stroke.points[0];
@@ -207,6 +278,7 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
   const [isDemonstrating, setIsDemonstrating] = useState(false);
   const [arrowEditMode, setArrowEditMode] = useState(false);
   const [draftStrokes, setDraftStrokes] = useState<StrokeStart[] | null>(null);
+  const [strokeFit, setStrokeFit] = useState<StrokeFitResult | null>(null);
 
   const guideFontSize = Math.min(size.w, size.h) * GUIDE_FONT_SIZE_RATIO;
 
@@ -288,6 +360,11 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
     };
     bboxRef.current = letterBounds;
     bboxSizeRef.current = { w: canvas.width, h: canvas.height };
+
+    if (import.meta.env.DEV) {
+      const auditStrokes = getStrokes(settings.font.family, caseType, displayLetter);
+      setStrokeFit(calculateStrokeFit(ctx, auditStrokes, letterBounds, guideFontSize * 0.012));
+    }
 
     // Draw stroke order arrows and numbers
     if (settings.showStrokeNumbers) {
@@ -467,7 +544,7 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
     }; // end draw()
 
     document.fonts.load(`${guideFontSize}px "${settings.font.family}"`).then(draw);
-  }, [letter, caseType, settings.font.family, settings.guideStrokeWidth, settings.showStrokeNumbers, size, arrowEditMode, draftStrokes]);
+  }, [letter, caseType, settings.font.family, settings.guideStrokeWidth, settings.showStrokeNumbers, size, arrowEditMode, draftStrokes, guideFontSize, guideX, guideY]);
 
   // Edit canvas: draw drag handles whenever arrowEditMode or draftStrokes changes
   useEffect(() => {
@@ -1183,16 +1260,35 @@ export function Canvas({ letter, caseType, settings, onScore, onClear, score, on
         </button>
 
         {import.meta.env.DEV && (
-          <button
-            onClick={handleToggleEditArrows}
-            className={`px-4 py-3.5 sm:px-5 sm:py-3.5 rounded-2xl shadow-md font-semibold text-sm active:scale-95 transition-all ${
-              arrowEditMode
-                ? 'bg-amber-500 text-white hover:bg-amber-600'
-                : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
-            }`}
-          >
-            {arrowEditMode ? '✓ Finish Calibrating' : '✎ Calibrate Strokes'}
-          </button>
+          <>
+            <button
+              onClick={handleToggleEditArrows}
+              className={`px-4 py-3.5 sm:px-5 sm:py-3.5 rounded-2xl shadow-md font-semibold text-sm active:scale-95 transition-all ${
+                arrowEditMode
+                  ? 'bg-amber-500 text-white hover:bg-amber-600'
+                  : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+              }`}
+            >
+              {arrowEditMode ? '✓ Finish Calibrating' : '✎ Calibrate Strokes'}
+            </button>
+            {strokeFit !== null && (
+              <span
+                data-stroke-fit={strokeFit.overall}
+                data-stroke-fit-details={strokeFit.perStroke.join(',')}
+                data-stroke-fit-misses={strokeFit.missRanges.join(',')}
+                title="Percentage of sampled animation points that fall within the glyph or its calibration tolerance"
+                className={`px-4 py-3.5 rounded-2xl shadow-sm font-semibold text-sm ${
+                  strokeFit.overall >= 92
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : strokeFit.overall >= 80
+                      ? 'bg-amber-50 text-amber-700'
+                      : 'bg-red-50 text-red-700'
+                }`}
+              >
+                Path fit: {strokeFit.overall}% ({strokeFit.perStroke.join(' / ')})
+              </span>
+            )}
+          </>
         )}
 
         <button

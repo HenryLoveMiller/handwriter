@@ -518,7 +518,7 @@ const ABEEZEE_UPPER: FontStrokeMap = {
 
   // Q: CCW oval (compound, like O); tail from lower-right — from editor.
   Q: [
-    {x:0.91,y:0.49, ex:0.91,ey:0.49, cx:0.75,cy:-0.34, c2x:-0.30,c2y:0.15, mx:0.18,my:0.83, c3x:0.37,c3y:0.99, c4x:0.84,c4y:0.99},
+    {x:0.84,y:0.22, ex:0.84,ey:0.22, cx:0.48,cy:-0.19, c2x:-0.34,c2y:0.30, mx:0.29,my:0.72, c3x:0.88,c3y:0.85, c4x:1.07,c4y:0.40},
     {x:0.62,y:0.72, ex:0.94,ey:0.93},
   ],
 
@@ -638,11 +638,11 @@ const ABEEZEE_LOWER: FontStrokeMap = {
 
   // g: oval + descending tail with leftward hook — from editor.
   g: [
-    {x:0.68,y:0.05, ex:0.91,ey:0.53,
+    {x:0.68,y:0.05, ex:0.89,ey:0.56,
      cx:0.37,cy:0.03, c2x:-0.18,c2y:0.18,
-     mx:0.16,my:0.55,
-     c3x:0.50,c3y:0.73, c4x:0.66,c4y:0.60},
-    {x:0.94,y:0.09, ex:0.22,ey:0.92, cx:0.88,cy:0.68, c2x:1.12,c2y:1.01},
+     mx:0.16,my:0.58,
+     c3x:0.50,c3y:0.78, c4x:0.66,c4y:0.64},
+    {x:0.82,y:0.09, ex:0.22,ey:0.92, cx:0.82,cy:0.68, c2x:0.92,c2y:1.01},
   ],
 
   // h: tall stem; arch with a subtle upturned exit — from editor.
@@ -660,13 +660,12 @@ const ABEEZEE_LOWER: FontStrokeMap = {
     {x:0.76,y:0.06, ex:0.76,ey:0.06},
   ],
 
-  // k: tall stem; second stroke forms a small x-height loop, then sweeps down-right with a subtle upturned exit.
+  // k: tall stem; second stroke moves upper-right → junction → lower-right without retracing.
   k: [
     {x:0.12,y:0.02, ex:0.12,ey:0.96},
-    {x:0.12,y:0.54, ex:0.96,ey:0.91,
-     cx:0.38,cy:0.47, c2x:0.58,c2y:0.36,
-     mx:0.75,my:0.35, c3x:0.90,c3y:0.43, c4x:0.56,c4y:0.66,
-     mx2:0.34,my2:0.58, c5x:0.48,c5y:0.65, c6x:0.86,c6y:0.97},
+    {x:0.88,y:0.35, ex:0.96,ey:0.91,
+     cx:0.70,cy:0.36, c2x:0.48,c2y:0.52,
+     mx:0.34,my:0.58, c3x:0.48,c3y:0.65, c4x:0.86,c4y:0.97},
   ],
 
   // l: tall stroke with curved tail — from editor.

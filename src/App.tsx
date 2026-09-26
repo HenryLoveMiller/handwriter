@@ -8,12 +8,18 @@ import { Toolbar } from './components/Toolbar';
 import { ProgressTracker } from './components/ProgressTracker';
 import { loadScores, saveScore } from './utils/scoring';
 
+const INITIAL_PARAMS = new URLSearchParams(window.location.search);
+const INITIAL_LETTER = INITIAL_PARAMS.get('letter')?.toUpperCase() ?? 'A';
+const INITIAL_LETTER_INDEX = Math.max(0, ALPHABET.indexOf(INITIAL_LETTER));
+const INITIAL_CASE: LetterCase = INITIAL_PARAMS.get('case') === 'lower' ? 'lower' : 'upper';
+const INITIAL_FONT = FONT_OPTIONS.find((font) => font.family === INITIAL_PARAMS.get('font')) ?? FONT_OPTIONS[0];
+
 const DEFAULT_SETTINGS: ToolbarSettings = {
   strokeWeight: 3,      // Regular — guide 2px
   penWidth: 5,          // 5% of canvas min dimension — matches ABeeZee Regular stroke width
   guideStrokeWidth: 2,
   guideOpacity: 0.2,
-  font: FONT_OPTIONS[0], // ABeeZee — simplest letterforms, good starting point
+  font: INITIAL_FONT, // ABeeZee by default; URL parameter supports automated audits
   showStrokeNumbers: true,
 };
 
@@ -36,8 +42,8 @@ function updateWithViewTransition(update: () => void) {
 }
 
 export default function App() {
-  const [letterIndex, setLetterIndex] = useState(0);
-  const [caseType, setCaseType] = useState<LetterCase>('upper');
+  const [letterIndex, setLetterIndex] = useState(INITIAL_LETTER_INDEX);
+  const [caseType, setCaseType] = useState<LetterCase>(INITIAL_CASE);
   const [settings, setSettings] = useState<ToolbarSettings>(DEFAULT_SETTINGS);
   const [scores, setScores] = useState<Record<string, LetterScore>>(loadScores);
   const [pendingScore, setPendingScore] = useState<LetterScore | null>(null);

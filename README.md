@@ -33,6 +33,10 @@ When adding a font, calibrate every uppercase and lowercase glyph instead of ali
 stroke map indefinitely. In development mode, select the font and letter, click **Calibrate Strokes**,
 drag the numbered endpoints and Bézier handles onto the visible glyph, and press **Demo** to preview
 the draft path. Copy the generated block into the font-specific map in `src/data/strokeData.ts`.
+The development toolbar also reports a sampled **Path fit** score: 92% or higher is the default
+acceptance target, while lower scores should be reviewed stroke by stroke. Audit links can open a
+specific glyph directly, for example `/?font=ABeeZee&case=lower&letter=g`, which makes automated
+browser regression checks deterministic.
 
 - The guide letter is rendered as a CSS element (not on the canvas) for crisp antialiasing at all sizes; the scoring uses an offscreen canvas with an identical font spec for pixel-accurate comparison.
 - Canvas internal resolution matches the container's CSS pixel dimensions from a ResizeObserver, so it stays sharp at any layout size.
